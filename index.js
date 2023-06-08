@@ -12,6 +12,12 @@ app.get("/", (req, res) => {
   res.send("Ninja School Server is running.");
 });
 
+app.post("/jwt", (req, res) => {
+  const user = req.body;
+  const token = jwt.sign(user, process.env.JWT_SECRET_KEY, { expiresIn: "1h" });
+  res.send({ token });
+});
+
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = process.env.MONGODB_URL;
 
