@@ -1,5 +1,7 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+
 require("dotenv").config();
 
 const app = express();
@@ -37,10 +39,34 @@ async function run() {
 
     const database = client.db("ninjaSchoolDB");
     const users = database.collection("users");
+    const instructors = database.collection("instructors");
 
     app.post("/user", async (req, res) => {
       const user = req.body;
       const result = await users.insertOne(user);
+      res.send(result);
+    });
+
+    //instructor
+    app.get("/instructors", async (req, res) => {
+      const result = await instructors
+        .aggregate([
+          {
+            $addFields: {
+              enrolledStudents: {
+                $subtract: ["$totalSeats", "$availableSeats"],
+              },
+            },
+          },
+          {
+            $sort: { enrolledStudents: -1 },
+          },
+          {
+            $limit: 6,
+          },
+        ])
+        .toArray();
+
       res.send(result);
     });
 
