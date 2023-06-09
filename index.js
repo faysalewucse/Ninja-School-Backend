@@ -49,9 +49,9 @@ async function run() {
     });
 
     //classes
-    // get all classes
+    // get all approved classes
     app.get("/classes", async (req, res) => {
-      const cursor = classes.find();
+      const cursor = classes.find({ status: "approved" });
       const result = await cursor.toArray();
 
       res.send(result);
