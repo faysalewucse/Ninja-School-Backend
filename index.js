@@ -42,6 +42,13 @@ async function run() {
     const classes = database.collection("classes");
     const instructors = database.collection("instructors");
 
+    // users
+    app.get("/users/:userEmail", async (req, res) => {
+      const email = req.params.userEmail;
+      const result = await users.findOne({ email: email });
+      res.send(result);
+    });
+
     app.post("/user", async (req, res) => {
       const user = req.body;
       const result = await users.insertOne(user);
