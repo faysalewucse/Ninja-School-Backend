@@ -39,6 +39,7 @@ async function run() {
 
     const database = client.db("ninjaSchoolDB");
     const users = database.collection("users");
+    const classes = database.collection("classes");
     const instructors = database.collection("instructors");
 
     app.post("/user", async (req, res) => {
@@ -47,9 +48,9 @@ async function run() {
       res.send(result);
     });
 
-    //instructor
-    app.get("/instructors", async (req, res) => {
-      const result = await instructors
+    //classes
+    app.get("/classes/popular", async (req, res) => {
+      const result = await classes
         .aggregate([
           {
             $addFields: {
@@ -68,6 +69,73 @@ async function run() {
         .toArray();
 
       res.send(result);
+    });
+
+    // instructors
+    app.get("/instructors/popular", async (req, res) => {
+      try {
+        const popularInstructors = await instructors
+          .aggregate([
+            {
+              $unwind: "$classIds",
+            },
+            {
+              $lookup: {
+                from: "classes",
+                let: { classId: { $toObjectId: "$classIds" } },
+                pipeline: [
+                  {
+                    $match: {
+                      $expr: { $eq: ["$_id", "$$classId"] },
+                    },
+                  },
+                ],
+                as: "classes",
+              },
+            },
+            {
+              $addFields: {
+                totalStudents: {
+                  $sum: {
+                    $map: {
+                      input: "$classes",
+                      as: "class",
+                      in: {
+                        $subtract: [
+                          "$$class.totalSeats",
+                          "$$class.availableSeats",
+                        ],
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            {
+              $group: {
+                _id: "$_id",
+                name: { $first: "$name" },
+                email: { $first: "$email" },
+                image: { $first: "$image" },
+                classIds: { $push: "$classIds" },
+                classNames: { $first: "$classNames" },
+                totalStudents: { $sum: "$totalStudents" },
+              },
+            },
+            {
+              $sort: { totalStudents: -1 },
+            },
+            {
+              $limit: 6,
+            },
+          ])
+          .toArray();
+
+        res.send(popularInstructors);
+      } catch (error) {
+        console.error("Error:", error);
+        res.status(500).json({ error: "Internal server error" });
+      }
     });
 
     // Send a ping to confirm a successful connection
