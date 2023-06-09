@@ -72,6 +72,15 @@ async function run() {
     });
 
     // instructors
+    // get all instructor
+    // GET
+    app.get("/instructors", async (req, res) => {
+      const cursor = instructors.find();
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+    // get 6 popular instructor
     app.get("/instructors/popular", async (req, res) => {
       try {
         const popularInstructors = await instructors
