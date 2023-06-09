@@ -49,6 +49,15 @@ async function run() {
     });
 
     //classes
+    // get all classes
+    app.get("/classes", async (req, res) => {
+      const cursor = classes.find();
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
+    // get popular classes
     app.get("/classes/popular", async (req, res) => {
       const result = await classes
         .aggregate([
@@ -73,7 +82,6 @@ async function run() {
 
     // instructors
     // get all instructor
-    // GET
     app.get("/instructors", async (req, res) => {
       const cursor = instructors.find();
       const result = await cursor.toArray();
