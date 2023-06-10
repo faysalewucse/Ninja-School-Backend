@@ -66,12 +66,15 @@ async function run() {
     });
 
     // get student booked classes
-    // app.get("/classes/:studentEmail", async (req, res) => {
-    //   const cursor = classes.find({ email: req.params.studentEmail });
-    //   const result = await cursor.toArray();
+    app.get("/bookedClasses/:studentEmail", async (req, res) => {
+      console.log(req.params.studentEmail);
+      const cursor = bookedClasses.find({
+        studentEmail: req.params.studentEmail,
+      });
+      const result = await cursor.toArray();
 
-    //   res.send(result);
-    // });
+      res.send(result);
+    });
 
     // get popular classes
     app.get("/classes/popular", async (req, res) => {
