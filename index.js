@@ -67,10 +67,26 @@ async function run() {
 
     // get student booked classes
     app.get("/bookedClasses/:studentEmail", async (req, res) => {
-      console.log(req.params.studentEmail);
-      const cursor = bookedClasses.find({
-        studentEmail: req.params.studentEmail,
-      });
+      const cursor = bookedClasses.aggregate([
+        {
+          $match: { studentEmail: req.params.studentEmail },
+        },
+        {
+          $lookup: {
+            from: "classes",
+            let: { classId: { $toObjectId: "$classId" } },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$classId"] },
+                },
+              },
+            ],
+            as: "classInfo",
+          },
+        },
+      ]);
+
       const result = await cursor.toArray();
 
       res.send(result);
