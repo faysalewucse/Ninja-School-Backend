@@ -92,6 +92,19 @@ async function run() {
       res.send(result);
     });
 
+    // delete student booked class
+    app.delete("/bookedClasses/:bookedClassId", async (req, res) => {
+      const result = await bookedClasses.deleteOne({
+        _id: new ObjectId(req.params.bookedClassId),
+      });
+
+      if (result.deletedCount === 1) {
+        res.send(result);
+      } else {
+        res.send({ error: "Booked class not found." });
+      }
+    });
+
     // get popular classes
     app.get("/classes/popular", async (req, res) => {
       const result = await classes
@@ -129,6 +142,7 @@ async function run() {
 
       res.send(result);
     });
+
     // get 6 popular instructor
     app.get("/instructors/popular", async (req, res) => {
       try {
