@@ -27,7 +27,7 @@ app.post("/create-payment-intent", verifyJWT, async (req, res) => {
   const { price } = req.body;
   const amount = parseInt(price) * 100;
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: calculateOrderAmount(items),
+    amount: amount,
     currency: "usd",
     payment_method_types: ["card"],
   });
@@ -59,6 +59,7 @@ async function run() {
     const classes = database.collection("classes");
     const instructors = database.collection("instructors");
     const bookedClasses = database.collection("bookedClasses");
+    const payments = database.collection("payments");
 
     // users
     app.get("/users/:userEmail", async (req, res) => {
@@ -225,6 +226,13 @@ async function run() {
         console.error("Error:", error);
         res.status(500).json({ error: "Internal server error" });
       }
+    });
+
+    // Payments
+    app.post("/payment", verifyJWT, async (req, res) => {
+      const data = req.body;
+      const result = await payments.insertOne(data);
+      res.send(result);
     });
 
     // Send a ping to confirm a successful connection
