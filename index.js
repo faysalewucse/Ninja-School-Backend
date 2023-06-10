@@ -41,6 +41,7 @@ async function run() {
     const users = database.collection("users");
     const classes = database.collection("classes");
     const instructors = database.collection("instructors");
+    const bookedClasses = database.collection("bookedClasses");
 
     // users
     app.get("/users/:userEmail", async (req, res) => {
@@ -55,7 +56,7 @@ async function run() {
       res.send(result);
     });
 
-    //classes
+    //****************classes************
     // get all approved classes
     app.get("/classes", async (req, res) => {
       const cursor = classes.find({ status: "approved" });
@@ -63,6 +64,14 @@ async function run() {
 
       res.send(result);
     });
+
+    // get student booked classes
+    // app.get("/classes/:studentEmail", async (req, res) => {
+    //   const cursor = classes.find({ email: req.params.studentEmail });
+    //   const result = await cursor.toArray();
+
+    //   res.send(result);
+    // });
 
     // get popular classes
     app.get("/classes/popular", async (req, res) => {
@@ -87,7 +96,13 @@ async function run() {
       res.send(result);
     });
 
-    // instructors
+    app.post("/bookedClass", async (req, res) => {
+      const data = req.body;
+      const result = await bookedClasses.insertOne(data);
+      res.send(result);
+    });
+
+    // ************instructors**************
     // get all instructor
     app.get("/instructors", async (req, res) => {
       const cursor = instructors.find();
