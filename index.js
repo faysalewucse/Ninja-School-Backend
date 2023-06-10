@@ -111,7 +111,7 @@ async function run() {
     });
 
     // delete student booked class
-    app.delete("/bookedClasses/:bookedClassId", async (req, res) => {
+    app.delete("/bookedClasses/:bookedClassId", verifyJWT, async (req, res) => {
       const result = await bookedClasses.deleteOne({
         _id: new ObjectId(req.params.bookedClassId),
       });
@@ -152,6 +152,16 @@ async function run() {
       res.send(result);
     });
 
+    app.put("/classes/:classId", verifyJWT, (req, res) => {
+      const classId = req.params.classId;
+
+      const result = classes.updateOne(
+        { _id: new ObjectId(classId) },
+        { $inc: { availableSeats: -1 } }
+      );
+
+      res.send(result);
+    });
     // ************instructors**************
     // get all instructor
     app.get("/instructors", async (req, res) => {
