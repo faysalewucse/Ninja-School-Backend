@@ -75,8 +75,24 @@ async function run() {
 
     //****************classes************
     // get all approved classes
+    app.post("/classes", async (req, res) => {
+      const classData = req.body;
+      const result = await classes.insertOne(classData);
+      res.send(result);
+    });
+
     app.get("/classes", async (req, res) => {
       const cursor = classes.find({ status: "approved" });
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
+    // get classes by instructor email
+    app.get("/classes/:instructorEmail", verifyJWT, async (req, res) => {
+      const cursor = classes.find({
+        instructorEmail: req.params.instructorEmail,
+      });
       const result = await cursor.toArray();
 
       res.send(result);
@@ -123,7 +139,7 @@ async function run() {
     });
 
     // get popular classes
-    app.get("/classes/popular", async (req, res) => {
+    app.get("/popularClasses", async (req, res) => {
       const result = await classes
         .aggregate([
           {
