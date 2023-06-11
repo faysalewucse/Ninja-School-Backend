@@ -246,6 +246,9 @@ async function run() {
     });
 
     app.get("/payments/:userEmail", verifyJWT, async (req, res) => {
+      let sort = {};
+      if (req.query.sort === "true") sort._id = -1;
+
       const cursor = payments.aggregate([
         {
           $match: { userEmail: req.params.userEmail },
@@ -263,6 +266,9 @@ async function run() {
             ],
             as: "classInfo",
           },
+        },
+        {
+          $sort: sort,
         },
       ]);
 
