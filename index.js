@@ -72,7 +72,14 @@ async function run() {
       next();
     };
 
+    // TODO: verify instructor remains
     // users
+    app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
+      const cursor = users.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.get("/users/:userEmail", async (req, res) => {
       const email = req.params.userEmail;
       const result = await users.findOne({ email: email });
@@ -84,6 +91,23 @@ async function run() {
       const result = await users.insertOne(user);
       res.send(result);
     });
+
+    app.patch(
+      "/changeUserRole/:userEmail",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const userEmail = req.params.userEmail;
+        const newRole = req.query.role;
+
+        const result = await users.updateOne(
+          { email: userEmail },
+          { $set: { role: newRole } }
+        );
+
+        res.send(result);
+      }
+    );
 
     //****************classes************
     // get all approved classes
@@ -201,11 +225,11 @@ async function run() {
       "/changeClassStatus/:classId",
       verifyJWT,
       verifyAdmin,
-      (req, res) => {
+      async (req, res) => {
         const classId = req.params.classId;
         const status = req.query.status;
 
-        const result = classes.updateOne(
+        const result = await classes.updateOne(
           { _id: new ObjectId(classId) },
           { $set: { status: status } }
         );
@@ -214,17 +238,22 @@ async function run() {
       }
     );
 
-    app.patch("/feedback/:classId", verifyJWT, verifyAdmin, (req, res) => {
-      const classId = req.params.classId;
-      const message = req.query.message;
+    app.patch(
+      "/feedback/:classId",
+      verifyJWT,
+      verifyAdmin,
+      async (req, res) => {
+        const classId = req.params.classId;
+        const message = req.query.message;
 
-      const result = classes.updateOne(
-        { _id: new ObjectId(classId) },
-        { $set: { feedback: message } }
-      );
+        const result = await classes.updateOne(
+          { _id: new ObjectId(classId) },
+          { $set: { feedback: message } }
+        );
 
-      res.send(result);
-    });
+        res.send(result);
+      }
+    );
 
     // ************instructors**************
     // get all instructor
