@@ -197,11 +197,30 @@ async function run() {
       res.send(result);
     });
 
-    app.patch("/approvedClass/:classId", verifyJWT, verifyAdmin, (req, res) => {
+    app.patch(
+      "/changeClassStatus/:classId",
+      verifyJWT,
+      verifyAdmin,
+      (req, res) => {
+        const classId = req.params.classId;
+        const status = req.query.status;
+
+        const result = classes.updateOne(
+          { _id: new ObjectId(classId) },
+          { $set: { status: status } }
+        );
+
+        res.send(result);
+      }
+    );
+
+    app.patch("/feedback/:classId", verifyJWT, verifyAdmin, (req, res) => {
       const classId = req.params.classId;
+      const message = req.query.message;
+
       const result = classes.updateOne(
         { _id: new ObjectId(classId) },
-        { $set: { status: "approved" } }
+        { $set: { feedback: message } }
       );
 
       res.send(result);
