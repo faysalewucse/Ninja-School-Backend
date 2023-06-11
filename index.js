@@ -245,6 +245,32 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/payments/:userEmail", verifyJWT, async (req, res) => {
+      const cursor = payments.aggregate([
+        {
+          $match: { userEmail: req.params.userEmail },
+        },
+        {
+          $lookup: {
+            from: "classes",
+            let: { classId: { $toObjectId: "$classId" } },
+            pipeline: [
+              {
+                $match: {
+                  $expr: { $eq: ["$_id", "$$classId"] },
+                },
+              },
+            ],
+            as: "classInfo",
+          },
+        },
+      ]);
+
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Successfully connected to MongoDB!");
