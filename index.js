@@ -60,6 +60,18 @@ async function run() {
     const bookedClasses = database.collection("bookedClasses");
     const payments = database.collection("payments");
 
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await users.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden message" });
+      }
+      next();
+    };
+
     // users
     app.get("/users/:userEmail", async (req, res) => {
       const email = req.params.userEmail;
@@ -83,6 +95,13 @@ async function run() {
 
     app.get("/classes", async (req, res) => {
       const cursor = classes.find({ status: "approved" });
+      const result = await cursor.toArray();
+
+      res.send(result);
+    });
+
+    app.get("/allClasses", async (req, res) => {
+      const cursor = classes.find().sort({ _id: -1 });
       const result = await cursor.toArray();
 
       res.send(result);
@@ -177,6 +196,17 @@ async function run() {
 
       res.send(result);
     });
+
+    app.patch("/approvedClass/:classId", verifyJWT, verifyAdmin, (req, res) => {
+      const classId = req.params.classId;
+      const result = classes.updateOne(
+        { _id: new ObjectId(classId) },
+        { $set: { status: "approved" } }
+      );
+
+      res.send(result);
+    });
+
     // ************instructors**************
     // get all instructor
     app.get("/instructors", async (req, res) => {
