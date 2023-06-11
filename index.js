@@ -57,7 +57,6 @@ async function run() {
     const database = client.db("ninjaSchoolDB");
     const users = database.collection("users");
     const classes = database.collection("classes");
-    const instructors = database.collection("instructors");
     const bookedClasses = database.collection("bookedClasses");
     const payments = database.collection("payments");
 
@@ -165,7 +164,20 @@ async function run() {
     // ************instructors**************
     // get all instructor
     app.get("/instructors", async (req, res) => {
-      const cursor = instructors.find();
+      const cursor = users.aggregate([
+        {
+          $match: { role: "instructor" },
+        },
+        {
+          $lookup: {
+            from: "classes",
+            localField: "email",
+            foreignField: "instructorEmail",
+            as: "classInfo",
+          },
+        },
+      ]);
+
       const result = await cursor.toArray();
 
       res.send(result);
@@ -174,23 +186,17 @@ async function run() {
     // get 6 popular instructor
     app.get("/instructors/popular", async (req, res) => {
       try {
-        const popularInstructors = await instructors
+        const popularInstructors = await users
           .aggregate([
             {
-              $unwind: "$classIds",
+              $match: { role: "instructor" },
             },
             {
               $lookup: {
                 from: "classes",
-                let: { classId: { $toObjectId: "$classIds" } },
-                pipeline: [
-                  {
-                    $match: {
-                      $expr: { $eq: ["$_id", "$$classId"] },
-                    },
-                  },
-                ],
-                as: "classes",
+                localField: "email",
+                foreignField: "instructorEmail",
+                as: "classInfo",
               },
             },
             {
@@ -198,7 +204,7 @@ async function run() {
                 totalStudents: {
                   $sum: {
                     $map: {
-                      input: "$classes",
+                      input: "$classInfo",
                       as: "class",
                       in: {
                         $subtract: [
@@ -216,9 +222,8 @@ async function run() {
                 _id: "$_id",
                 name: { $first: "$name" },
                 email: { $first: "$email" },
-                image: { $first: "$image" },
-                classIds: { $push: "$classIds" },
-                classNames: { $first: "$classNames" },
+                photoURL: { $first: "$photoURL" },
+                classInfo: { $push: "$classInfo" },
                 totalStudents: { $sum: "$totalStudents" },
               },
             },
@@ -246,7 +251,7 @@ async function run() {
     });
 
     app.get("/payments/:userEmail", verifyJWT, async (req, res) => {
-      let sort = {};
+      let sort = { _id: 1 };
       if (req.query.sort === "true") sort._id = -1;
 
       const cursor = payments.aggregate([
