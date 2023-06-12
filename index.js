@@ -72,6 +72,19 @@ async function run() {
       next();
     };
 
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+
+      const user = await users.findOne(query);
+      if (user?.role !== "instructor") {
+        return res
+          .status(403)
+          .send({ error: true, message: "forbidden message" });
+      }
+      next();
+    };
+
     // TODO: verify instructor remains
     // users
     app.get("/users", verifyJWT, verifyAdmin, async (req, res) => {
@@ -132,14 +145,19 @@ async function run() {
     });
 
     // get classes by instructor email
-    app.get("/classes/:instructorEmail", verifyJWT, async (req, res) => {
-      const cursor = classes.find({
-        instructorEmail: req.params.instructorEmail,
-      });
-      const result = await cursor.toArray();
+    app.get(
+      "/classes/:instructorEmail",
+      verifyJWT,
+      verifyInstructor,
+      async (req, res) => {
+        const cursor = classes.find({
+          instructorEmail: req.params.instructorEmail,
+        });
+        const result = await cursor.toArray();
 
-      res.send(result);
-    });
+        res.send(result);
+      }
+    );
 
     // get student booked classes
     app.get("/bookedClasses/:studentEmail", async (req, res) => {
@@ -376,6 +394,46 @@ async function run() {
       res.send(result);
     });
 
+    // ---------***Counts***-----------
+    app.get("/adminInfo", verifyJWT, verifyAdmin, async (req, res) => {
+      const instructorCount = await users.countDocuments({
+        role: "instructor",
+      });
+      const studentCount = await users.countDocuments({ role: "student" });
+      const adminCount = await users.countDocuments({ role: "admin" });
+      const classCount = await classes.countDocuments();
+
+      res.send({ instructorCount, studentCount, adminCount, classCount });
+    });
+
+    app.get(
+      "/instructorInfo/:instructorEmail",
+      verifyJWT,
+      verifyInstructor,
+      async (req, res) => {
+        const instructorEmail = req.params.instructorEmail;
+
+        const instructorCount = await classes.countDocuments({
+          instructorEmail: instructorEmail,
+        });
+
+        const studentCount = await classes
+          .aggregate([
+            { $match: { instructorEmail: instructorEmail } },
+            {
+              $group: {
+                _id: null,
+                totalStudent: {
+                  $sum: { $subtract: ["$totalSeats", "$availableSeats"] },
+                },
+              },
+            },
+          ])
+          .toArray();
+
+        res.send({ instructorCount, studentCount });
+      }
+    );
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Successfully connected to MongoDB!");
